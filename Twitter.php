@@ -1,13 +1,11 @@
-<?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
-
 /**
  * @desc CodeIgniter Twitter Class
- *This class enables you to use Twitter API functions.
+ * This class enables you to use Twitter API functions.
  *
- * @version 	0.1
+ * @version 		0.1
  * @author		Arthur Grishin <arthur.grishin@me.com>
  * @link		http://www.arthurgrishin.com/
- * @copyright 	© 2010 Arthur Grishin
+ *
  */
  
  class Twitter {
