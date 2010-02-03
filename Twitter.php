@@ -2,7 +2,7 @@
  * @desc CodeIgniter Twitter Class
  * This class enables you to use Twitter API functions.
  *
- * @version 		0.1
+ * @version 		0.9
  * @author		Arthur Grishin <arthur.grishin@me.com>
  * @link		http://www.arthurgrishin.com/
  *
