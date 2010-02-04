@@ -6,7 +6,7 @@
  * @version		0.9
  * @author		Arthur Grishin <arthur.grishin@me.com>
  * @link		http://www.arthurgrishin.com/
- * @copyright	© 2010 Arthur Grishin
+ * @copyright		2010 Arthur Grishin
  */
  
  class Twitter {
