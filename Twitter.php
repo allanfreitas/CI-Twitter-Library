@@ -3,10 +3,10 @@
  * @desc CodeIgniter Twitter Class
  * This class enables you to use Twitter API functions.
  *
- * @version		0.9
+ * @version		0.1
  * @author		Arthur Grishin <arthur.grishin@me.com>
  * @link		http://www.arthurgrishin.com/
- * @copyright		2010 Arthur Grishin
+ * @copyright	© 2010 Arthur Grishin
  */
  
  class Twitter {
@@ -22,15 +22,16 @@
 								'search'	=> 'http://search.twitter.com/',
 								'v1' 		=> 'http://api.twitter.com/1/',
 							); 
- 	public	$return_as_is	= false;
- 	
+ 	private	$_return_as_is	= false;
+ 	private $_curl 			= false;
+ 	private $_user_agent	= 'CI-Twitter-Library/0.9 (PHP)';
  	
  	/**
  	 * @desc Returns tweets that match a specified query.
  	 *
  	 * @param string $query
  	 * @param string $callback
- 	 * @param string $lang			use ISO 639-1 code
+ 	 * @param string $lang
  	 * @param string $locale
  	 * @param int $rpp
  	 * @param int $page
@@ -392,6 +393,309 @@
 		}
 		return false;
 	}
+	
+	/**
+	 * @desc Creates a new list for the authenticated user.
+	 *
+	 * @param string $name
+	 * @param string $mode
+	 * @param string $description
+	 * @return array
+	 */
+	public function list_create($name = FALSE, $mode = FALSE, $description = FALSE) {
+		if(in_array(strtolower($this->_type), array('xml','json'))) {	
+			if(!empty($name)) {									 
+				$returned = $this->_post($this->_api_hosts['v1'].$this->_username.'/lists.'.$this->_type, array(
+					'name' 			=> $name,
+					'mode'			=> $mode,
+					'description' 	=> $description,
+				), TRUE);
+				return $this->_parse_returned_value($returned);
+			}
+		}
+		return FALSE;
+	}
+	
+	/**
+	 * @desc Updates the specified list. 
+	 *
+	 * @param int $id
+	 * @param string $name
+	 * @param string $mode
+	 * @param string $description
+	 * @return array
+	 */
+	public function list_update($id = FALSE, $name = FALSE, $mode = FALSE, $description = FALSE) {
+		if(in_array(strtolower($this->_type), array('xml','json'))) {	
+			if(!empty($id)) {									 
+				$returned = $this->_post($this->_api_hosts['v1'].$this->_username.'/lists/'.$id.'.'.$this->_type, array(
+					'name' 			=> $name,
+					'mode'			=> $mode,
+					'description' 	=> $description,
+				), TRUE);
+				return $this->_parse_returned_value($returned);
+			}
+		}
+		return FALSE;
+	}
+	
+	/**
+	 * @desc List the lists of the specified user.
+	 *
+	 * @param string $user
+	 * @param int $cursor
+	 * @return array
+	 */
+	public function lists_index($user = FALSE, $cursor = FALSE) {
+		if(in_array(strtolower($this->_type), array('xml','json'))) {	
+			$returned = $this->_get($this->_api_hosts['v1'].(!empty($user) ? $user : $this->_username).'/lists.'.$this->_type, array(
+				'cursor' => $cursor,
+			), TRUE);
+			return $this->_parse_returned_value($returned);
+		}
+		return FALSE;
+	}
+	
+	/**
+	 * @desc Show the specified list.
+	 *
+	 * @param string $user
+	 * @param int $id
+	 * @return array
+	 */
+	public function list_show($user = FALSE, $id = FALSE) {
+		if(in_array(strtolower($this->_type), array('xml','json'))) {	
+			if(!empty($id)) {									 
+				$returned = $this->_get($this->_api_hosts['v1'].(!empty($user) ? $user : $this->_username).'/lists/'.$id.'.'.$this->_type, FALSE, TRUE);
+				return $this->_parse_returned_value($returned);
+			}
+		}
+		return FALSE;
+	}
+	
+	/**
+	 * @desc Deletes the specified list.
+	 *
+	 * @param int $id
+	 * @return array
+	 */
+	public function list_destroy($id = FALSE) {
+		if(in_array(strtolower($this->_type), array('xml','json'))) {	
+			if(!empty($id)) {									 
+				$returned = $this->_delete($this->_api_hosts['v1'].$this->_username.'/lists/'.$id.'.'.$this->_type, FALSE, TRUE);
+				return $this->_parse_returned_value($returned);
+			}
+		}
+		return FALSE;
+	}
+	
+	/**
+	 * @desc Show tweet timeline for members of the specified list.
+	 *
+	 * @param string $user
+	 * @param int $id
+	 * @param int $since_id
+	 * @param int $max_id
+	 * @param int $per_page
+	 * @param int $page
+	 * @return array
+	 */
+	public function list_statuses($user = FALSE, $id = FALSE, $since_id = FALSE, $max_id = FALSE, $per_page = FALSE, $page = FALSE) {
+		if(in_array(strtolower($this->_type), array('xml','json', 'atom'))) {	
+			if(!empty($id)) {									 
+				$returned = $this->_get($this->_api_hosts['v1'].(!empty($user) ? $user : $this->_username).'/lists/'.$id.'/statuses.'.$this->_type, array(
+					'since_id' 	=> $since_id,
+					'max_id' 	=> $max_id,
+					'per_page' 	=> $per_page,
+					'page' 		=> $page,
+				), FALSE);
+				return $this->_parse_returned_value($returned);
+			}
+		}
+		return FALSE;	
+ 	}
+ 	
+ 	/**
+ 	 * @desc List the lists the specified user has been added to.
+ 	 *
+ 	 * @param string $user
+ 	 * @param int $cursor
+ 	 * @return array
+ 	 */
+ 	public function list_memberships($user = FALSE, $cursor = FALSE) {
+		if(in_array(strtolower($this->_type), array('xml','json'))) {							 
+			$returned = $this->_get($this->_api_hosts['v1'].(!empty($user) ? $user : $this->_username).'/lists/memberships.'.$this->_type, array(
+				'cursor' 	=> $cursor,
+			), TRUE);
+			return $this->_parse_returned_value($returned);
+		}
+		return FALSE;	
+ 	}
+ 	
+ 	/**
+ 	 * @desc List the lists the specified user follows.
+ 	 *
+ 	 * @param string $user
+ 	 * @param int $cursor
+ 	 * @return array
+ 	 */
+ 	public function list_subscriptions($user = FALSE, $cursor = FALSE) {
+		if(in_array(strtolower($this->_type), array('xml','json'))) {							 
+			$returned = $this->_get($this->_api_hosts['v1'].(!empty($user) ? $user : $this->_username).'/lists/subscriptions.'.$this->_type, array(
+				'cursor' 	=> $cursor,
+			), TRUE);
+			return $this->_parse_returned_value($returned);
+		}
+		return FALSE;	
+ 	}
+	
+ 	/**
+ 	 * @desc Returns the members of the specified list.
+ 	 *
+ 	 * @param int $list_id
+ 	 * @param int $cursor
+ 	 * @return array
+ 	 */
+ 	public function list_members_show($list_id = FALSE, $cursor = false) {
+ 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
+ 			if(!empty($list_id)) {						 
+				$returned = $this->_get($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/members.'.$this->_type, array(
+					'cursor' 	=> $cursor,
+				), TRUE);
+				return $this->_parse_returned_value($returned);
+ 			}
+		}
+		return FALSE;	
+ 	}
+ 	
+ 	/**
+ 	 * @desc Add a member to a list.
+ 	 *
+ 	 * @param int $list_id
+ 	 * @param int $id
+ 	 * @return array
+ 	 */
+ 	public function list_members_add($list_id = FALSE, $id = FALSE) {
+ 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
+ 			if(!empty($list_id) && !empty($id)) {						 
+				$returned = $this->_post($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/members.'.$this->_type, array(
+					'id' 	=> $id,
+				), TRUE);
+				return $this->_parse_returned_value($returned);
+ 			}
+		}
+		return FALSE;		
+ 	}
+ 	
+ 	/**
+ 	 * @desc Removes the specified member from the list.
+ 	 *
+ 	 * @param int $list_id
+ 	 * @param int $id
+ 	 * @return array
+ 	 */
+ 	public function list_members_destroy($list_id = FALSE, $id = FALSE) {
+ 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
+ 			if(!empty($list_id) && !empty($id)) {						 
+				$returned = $this->_delete($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/members.'.$this->_type, array(
+					'id' 	=> $id,
+				), TRUE);
+				return $this->_parse_returned_value($returned);
+ 			}
+		}
+		return FALSE;		
+ 	}
+ 	
+ 	/**
+ 	 * @desc Check if a user is a member of the specified list.
+ 	 *
+ 	 * @param int $list_id
+ 	 * @param int $id
+ 	 * @return array
+ 	 */
+ 	public function list_is_member_of($list_id = FALSE, $id = FALSE) {
+ 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
+ 			if(!empty($list_id) && !empty($id)) {						 
+				$returned = $this->_get($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/members/'.$id.'.'.$this->_type, FALSE, TRUE);
+				return $this->_parse_returned_value($returned);
+ 			}
+		}
+		return FALSE;		
+ 	}
+ 	
+ 	/**
+ 	 * @desc Returns the subscribers of the specified list.
+ 	 *
+ 	 * @param int $list_id
+ 	 * @param int $cursor
+ 	 * @return array
+ 	 */
+ 	public function list_subscribers_show($list_id = FALSE, $cursor = false) {
+ 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
+ 			if(!empty($list_id)) {						 
+				$returned = $this->_get($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/subscribers.'.$this->_type, array(
+					'cursor' 	=> $cursor,
+				), TRUE);
+				return $this->_parse_returned_value($returned);
+ 			}
+		}
+		return FALSE;	
+ 	}
+ 	
+ 	/**
+ 	 * @desc Add a subscriber to a list.
+ 	 *
+ 	 * @param int $list_id
+ 	 * @param int $id
+ 	 * @return array
+ 	 */
+ 	public function list_subscribers_add($list_id = FALSE, $id = FALSE) {
+ 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
+ 			if(!empty($list_id) && !empty($id)) {						 
+				$returned = $this->_post($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/subscribers.'.$this->_type, array(
+					'id' 	=> $id,
+				), TRUE);
+				return $this->_parse_returned_value($returned);
+ 			}
+		}
+		return FALSE;		
+ 	}
+ 	
+ 	/**
+ 	 * @desc Removes the specified subscriber from the list.
+ 	 *
+ 	 * @param int $list_id
+ 	 * @param int $id
+ 	 * @return array
+ 	 */
+ 	public function list_subscribers_destroy($list_id = FALSE, $id = FALSE) {
+ 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
+ 			if(!empty($list_id) && !empty($id)) {						 
+				$returned = $this->_delete($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/subscribers.'.$this->_type, array(
+					'id' 	=> $id,
+				), TRUE);
+				return $this->_parse_returned_value($returned);
+ 			}
+		}
+		return FALSE;		
+ 	}
+ 	
+ 	/**
+ 	 * @desc Check if a user is a subscriber of the specified list.
+ 	 *
+ 	 * @param int $list_id
+ 	 * @param int $id
+ 	 * @return array
+ 	 */
+ 	public function list_is_subscriber_of($list_id = FALSE, $id = FALSE) {
+ 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
+ 			if(!empty($list_id) && !empty($id)) {						 
+				$returned = $this->_get($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/subscribers/'.$id.'.'.$this->_type, FALSE, TRUE);
+				return $this->_parse_returned_value($returned);
+ 			}
+		}
+		return FALSE;		
+ 	}
 	
 	/**
 	 * @desc Returns extended information of a given user, specified by ID or screen name as per the required 
@@ -1244,315 +1548,17 @@
 		} 	
 		return false;
  	}
-	
-	/**
-	 * @desc Creates a new list for the authenticated user.
-	 *
-	 * @param string $name
-	 * @param string $mode
-	 * @param string $description
-	 * @return array
-	 */
-	public function list_create($name = FALSE, $mode = FALSE, $description = FALSE) {
-		if(in_array(strtolower($this->_type), array('xml','json'))) {	
-			if(!empty($name)) {									 
-				$returned = $this->_post($this->_api_hosts['v1'].$this->_username.'/lists.'.$this->_type, array(
-					'name' 			=> $name,
-					'mode'			=> $mode,
-					'description' 	=> $description,
-				), TRUE);
-				return $this->_parse_returned_value($returned);
-			}
-		}
-		return FALSE;
-	}
-	
-	/**
-	 * @desc Updates the specified list. 
-	 *
-	 * @param int $id
-	 * @param string $name
-	 * @param string $mode
-	 * @param string $description
-	 * @return array
-	 */
-	public function list_update($id = FALSE, $name = FALSE, $mode = FALSE, $description = FALSE) {
-		if(in_array(strtolower($this->_type), array('xml','json'))) {	
-			if(!empty($id)) {									 
-				$returned = $this->_post($this->_api_hosts['v1'].$this->_username.'/lists/'.$id.'.'.$this->_type, array(
-					'name' 			=> $name,
-					'mode'			=> $mode,
-					'description' 	=> $description,
-				), TRUE);
-				return $this->_parse_returned_value($returned);
-			}
-		}
-		return FALSE;
-	}
-	
-	/**
-	 * @desc List the lists of the specified user.
-	 *
-	 * @param string $user
-	 * @param int $cursor
-	 * @return array
-	 */
-	public function lists_index($user = FALSE, $cursor = FALSE) {
-		if(in_array(strtolower($this->_type), array('xml','json'))) {	
-			$returned = $this->_get($this->_api_hosts['v1'].(!empty($user) ? $user : $this->_username).'/lists.'.$this->_type, array(
-				'cursor' => $cursor,
-			), TRUE);
-			return $this->_parse_returned_value($returned);
-		}
-		return FALSE;
-	}
-	
-	/**
-	 * @desc Show the specified list.
-	 *
-	 * @param string $user
-	 * @param int $id
-	 * @return array
-	 */
-	public function list_show($user = FALSE, $id = FALSE) {
-		if(in_array(strtolower($this->_type), array('xml','json'))) {	
-			if(!empty($id)) {									 
-				$returned = $this->_get($this->_api_hosts['v1'].(!empty($user) ? $user : $this->_username).'/lists/'.$id.'.'.$this->_type, FALSE, TRUE);
-				return $this->_parse_returned_value($returned);
-			}
-		}
-		return FALSE;
-	}
-	
-	/**
-	 * @desc Deletes the specified list.
-	 *
-	 * @param int $id
-	 * @return array
-	 */
-	public function list_destroy($id = FALSE) {
-		if(in_array(strtolower($this->_type), array('xml','json'))) {	
-			if(!empty($id)) {									 
-				$returned = $this->_delete($this->_api_hosts['v1'].$this->_username.'/lists/'.$id.'.'.$this->_type, FALSE, TRUE);
-				return $this->_parse_returned_value($returned);
-			}
-		}
-		return FALSE;
-	}
-	
-	/**
-	 * @desc Show tweet timeline for members of the specified list.
-	 *
-	 * @param string $user
-	 * @param int $id
-	 * @param int $since_id
-	 * @param int $max_id
-	 * @param int $per_page
-	 * @param int $page
-	 * @return array
-	 */
-	public function list_statuses($user = FALSE, $id = FALSE, $since_id = FALSE, $max_id = FALSE, $per_page = FALSE, $page = FALSE) {
-		if(in_array(strtolower($this->_type), array('xml','json', 'atom'))) {	
-			if(!empty($id)) {									 
-				$returned = $this->_get($this->_api_hosts['v1'].(!empty($user) ? $user : $this->_username).'/lists/'.$id.'/statuses.'.$this->_type, array(
-					'since_id' 	=> $since_id,
-					'max_id' 	=> $max_id,
-					'per_page' 	=> $per_page,
-					'page' 		=> $page,
-				), FALSE);
-				return $this->_parse_returned_value($returned);
-			}
-		}
-		return FALSE;	
- 	}
  	
- 	/**
- 	 * @desc List the lists the specified user has been added to.
- 	 *
- 	 * @param string $user
- 	 * @param int $cursor
- 	 * @return array
- 	 */
- 	public function list_memberships($user = FALSE, $cursor = FALSE) {
-		if(in_array(strtolower($this->_type), array('xml','json'))) {							 
-			$returned = $this->_get($this->_api_hosts['v1'].(!empty($user) ? $user : $this->_username).'/lists/memberships.'.$this->_type, array(
-				'cursor' 	=> $cursor,
-			), TRUE);
-			return $this->_parse_returned_value($returned);
-		}
-		return FALSE;	
- 	}
- 	
- 	/**
- 	 * @desc List the lists the specified user follows.
- 	 *
- 	 * @param string $user
- 	 * @param int $cursor
- 	 * @return array
- 	 */
- 	public function list_subscriptions($user = FALSE, $cursor = FALSE) {
-		if(in_array(strtolower($this->_type), array('xml','json'))) {							 
-			$returned = $this->_get($this->_api_hosts['v1'].(!empty($user) ? $user : $this->_username).'/lists/subscriptions.'.$this->_type, array(
-				'cursor' 	=> $cursor,
-			), TRUE);
-			return $this->_parse_returned_value($returned);
-		}
-		return FALSE;	
- 	}
-	
- 	/**
- 	 * @desc Returns the members of the specified list.
- 	 *
- 	 * @param int $list_id
- 	 * @param int $cursor
- 	 * @return array
- 	 */
- 	public function list_members_show($list_id = FALSE, $cursor = false) {
- 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
- 			if(!empty($list_id)) {						 
-				$returned = $this->_get($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/members.'.$this->_type, array(
-					'cursor' 	=> $cursor,
-				), TRUE);
-				return $this->_parse_returned_value($returned);
- 			}
-		}
-		return FALSE;	
- 	}
- 	
- 	/**
- 	 * @desc Add a member to a list.
- 	 *
- 	 * @param int $list_id
- 	 * @param int $id
- 	 * @return array
- 	 */
- 	public function list_members_add($list_id = FALSE, $id = FALSE) {
- 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
- 			if(!empty($list_id) && !empty($id)) {						 
-				$returned = $this->_post($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/members.'.$this->_type, array(
-					'id' 	=> $id,
-				), TRUE);
-				return $this->_parse_returned_value($returned);
- 			}
-		}
-		return FALSE;		
- 	}
- 	
- 	/**
- 	 * @desc Removes the specified member from the list.
- 	 *
- 	 * @param int $list_id
- 	 * @param int $id
- 	 * @return array
- 	 */
- 	public function list_members_destroy($list_id = FALSE, $id = FALSE) {
- 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
- 			if(!empty($list_id) && !empty($id)) {						 
-				$returned = $this->_delete($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/members.'.$this->_type, array(
-					'id' 	=> $id,
-				), TRUE);
-				return $this->_parse_returned_value($returned);
- 			}
-		}
-		return FALSE;		
- 	}
- 	
- 	/**
- 	 * @desc Check if a user is a member of the specified list.
- 	 *
- 	 * @param int $list_id
- 	 * @param int $id
- 	 * @return array
- 	 */
- 	public function list_is_member_of($list_id = FALSE, $id = FALSE) {
- 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
- 			if(!empty($list_id) && !empty($id)) {						 
-				$returned = $this->_get($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/members/'.$id.'.'.$this->_type, FALSE, TRUE);
-				return $this->_parse_returned_value($returned);
- 			}
-		}
-		return FALSE;		
- 	}
- 	
- 	/**
- 	 * @desc Returns the subscribers of the specified list.
- 	 *
- 	 * @param int $list_id
- 	 * @param int $cursor
- 	 * @return array
- 	 */
- 	public function list_subscribers_show($list_id = FALSE, $cursor = false) {
- 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
- 			if(!empty($list_id)) {						 
-				$returned = $this->_get($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/subscribers.'.$this->_type, array(
-					'cursor' 	=> $cursor,
-				), TRUE);
-				return $this->_parse_returned_value($returned);
- 			}
-		}
-		return FALSE;	
- 	}
- 	
- 	/**
- 	 * @desc Add a subscriber to a list.
- 	 *
- 	 * @param int $list_id
- 	 * @param int $id
- 	 * @return array
- 	 */
- 	public function list_subscribers_add($list_id = FALSE, $id = FALSE) {
- 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
- 			if(!empty($list_id) && !empty($id)) {						 
-				$returned = $this->_post($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/subscribers.'.$this->_type, array(
-					'id' 	=> $id,
-				), TRUE);
-				return $this->_parse_returned_value($returned);
- 			}
-		}
-		return FALSE;		
- 	}
- 	
- 	/**
- 	 * @desc Removes the specified subscriber from the list.
- 	 *
- 	 * @param int $list_id
- 	 * @param int $id
- 	 * @return array
- 	 */
- 	public function list_subscribers_destroy($list_id = FALSE, $id = FALSE) {
- 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
- 			if(!empty($list_id) && !empty($id)) {						 
-				$returned = $this->_delete($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/subscribers.'.$this->_type, array(
-					'id' 	=> $id,
-				), TRUE);
-				return $this->_parse_returned_value($returned);
- 			}
-		}
-		return FALSE;		
- 	}
- 	
- 	/**
- 	 * @desc Check if a user is a subscriber of the specified list.
- 	 *
- 	 * @param int $list_id
- 	 * @param int $id
- 	 * @return array
- 	 */
- 	public function list_is_subscriber_of($list_id = FALSE, $id = FALSE) {
- 		if(in_array(strtolower($this->_type), array('xml','json'))) {	
- 			if(!empty($list_id) && !empty($id)) {						 
-				$returned = $this->_get($this->_api_hosts['v1'].$this->_username.'/'.$list_id.'/subscribers/'.$id.'.'.$this->_type, FALSE, TRUE);
-				return $this->_parse_returned_value($returned);
- 			}
-		}
-		return FALSE;		
+ 	public function set_parse_return($state = TRUE) {
+ 		$this->_return_as_is = $state;
+ 		return TRUE;
  	}
 	
  	public function __construct($parameters = FALSE) {
 		if(!function_exists('log_message')) {
 			$this->_log= FALSE;
 		}
-		$this->_log = FALSE;
+		
  		if(!function_exists('curl_init')) {
  			if($this->_log) {
  				log_message('error', 'Twitter Class: cURL module not found. Use --with-curl when compiling PHP.');
@@ -1577,6 +1583,8 @@
  			}
  		}
  		
+ 		$this->_curl = curl_init();
+ 		
  		if(is_array($parameters) && count($parameters) > 0 && !empty($parameters['username']) && !empty($parameters['password'])) {
  			return $this->auth($parameters['username'],$parameters['password']);
  		}
@@ -1584,89 +1592,53 @@
  		return true;
  	}
  	
-	
- 	private function _get($url, $parameters = FALSE, $authorize = TRUE) { 
- 		$parameters = $this->_build_url_parameters($parameters);
-		echo '<b>GET: '.$url.$parameters.'</b><br />';
- 		$cURL = curl_init();
-		curl_setopt($cURL, CURLOPT_URL, $url.$parameters);
-		if($authorize) {
-			curl_setopt($cURL, CURLOPT_USERPWD, $this->_username.':'.$this->_password);
-		}
-		curl_setopt($cURL, CURLOPT_RETURNTRANSFER, TRUE); 
-		$returned = curl_exec($cURL);
-		$code = curl_getinfo($cURL, CURLINFO_HTTP_CODE);
-		curl_close($cURL);
+ 	private function _request($url, $parameters = FALSE, $method = 'GET',$authorize = TRUE, $send_array = FALSE) {
+ 		$method = (is_null($method) ? 'GET' : $method);
+ 		$parameters = $this->_build_url_parameters($parameters,('GET' != $method ? TRUE : FALSE),$send_array);
+ 		curl_setopt($this->_curl, CURLOPT_URL, $url.($method == 'GET' ? $parameters : false));
+ 		curl_setopt($this->_curl, CURLOPT_RETURNTRANSFER, TRUE);
+ 		curl_setopt($this->_curl, $this->_user_agent);
+ 		if($authorize) {
+			curl_setopt($this->_curl, CURLOPT_USERPWD, $this->_username.':'.$this->_password);
+ 		}
+ 		switch($method) {
+ 			case 'DELETE':
+ 				curl_setopt($this->_curl, CURLOPT_CUSTOMREQUEST, 'DELETE');
+ 			case 'POST':
+ 				curl_setopt($this->_curl, CURLOPT_POST, TRUE);
+				curl_setopt($this->_curl, CURLOPT_POSTFIELDS, $parameters);
+				curl_setopt($this->_curl, CURLOPT_HTTPHEADER, array('Expect:'));
+ 			break;
+ 		}
+ 		
+ 		$returned = curl_exec($this->_curl);
+		$code = curl_getinfo($this->_curl, CURLINFO_HTTP_CODE);
 		if (200 == $code){
 			return $returned;
 		} else {
 			if($this->_log) {
-				log_message('error', 'Twitter Class: '.$code.' HTTP code returned when trying to fetch data.');
+				log_message('error', 'Twitter Class: '.$method.':'.$code.' HTTP code returned when trying to fetch data.');
 			} else {
-				echo ('Twitter Class: '.$code.' HTTP code returned when trying to fetch data.');
+				echo ('Twitter Class: '.$method.':'.$code.' HTTP code returned when trying to fetch data.');
 			}
-			
-			return FALSE;
-		}
+		}	
+		return FALSE;
+ 	}
+	
+ 	private function _get($url, $parameters = FALSE, $authorize = TRUE) { 
+ 		return $this->_request($url, $parameters, 'GET', $authorize, FALSE);
  	}
  	
 	private function _post($url, $parameters = FALSE, $authorize = TRUE, $send_array = FALSE) { 
-		$parameters = $this->_build_url_parameters($parameters,TRUE,$send_array);
-		echo '<b>POST: '.$url.'</b><br />';
-		$cURL = curl_init();
-		curl_setopt($cURL, CURLOPT_URL, $url);
-		if($authorize) {
-			curl_setopt($cURL, CURLOPT_USERPWD, $this->_username.':'.$this->_password);
-		}
-		curl_setopt($cURL, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($cURL, CURLOPT_POST, TRUE);
-		curl_setopt($cURL, CURLOPT_POSTFIELDS, $parameters);
-		curl_setopt($cURL, CURLOPT_HTTPHEADER, array('Expect:'));
-		$returned = curl_exec($cURL);
-		$code = curl_getinfo($cURL, CURLINFO_HTTP_CODE);
-		curl_close($cURL);
-		if (200 == $code){
-			return $returned;
-		} else {
-			if($this->_log) {
-				log_message('error', 'Twitter Class: '.$code.' HTTP code returned when trying to fetch data.');
-			} else {
-				echo ('Twitter Class: '.$code.' HTTP code returned when trying to fetch data.');
-			}
-			return FALSE;
-		}
+		return $this->_request($url, $parameters, 'POST', $authorize, $send_array);
 	}
 	
-	private function _delete($url, $parameters = FALSE, $authorize = TRUE, $send_array = FALSE) { 
-		$parameters = $this->_build_url_parameters($parameters,TRUE,$send_array);
-		echo '<b>DELETE: '.$url.'</b><br />';
-		$cURL = curl_init();
-		curl_setopt($cURL, CURLOPT_URL, $url);
-		if($authorize) {
-			curl_setopt($cURL, CURLOPT_USERPWD, $this->_username.':'.$this->_password);
-		}
-		curl_setopt($cURL, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($cURL, CURLOPT_POST, TRUE);
-		curl_setopt($cURL, CURLOPT_POSTFIELDS, $parameters);
-		curl_setopt($cURL, CURLOPT_HTTPHEADER, array('Expect:'));
-		curl_setopt($cURL, CURLOPT_CUSTOMREQUEST, 'DELETE');
-		$returned = curl_exec($cURL);
-		$code = curl_getinfo($cURL, CURLINFO_HTTP_CODE);
-		curl_close($cURL);
-		if (200 == $code){
-			return $returned;
-		} else {
-			if($this->_log) {
-				log_message('error', 'Twitter Class: '.$code.' HTTP code returned when trying to fetch data.');
-			} else {
-				echo ('Twitter Class: '.$code.' HTTP code returned when trying to fetch data.');
-			}
-			return FALSE;
-		}
+	private function _delete($url, $parameters = FALSE, $authorize = TRUE) { 
+		return $this->_request($url, $parameters, 'DELETE', $authorize, FALSE);
 	}
 	
 	private function _parse_returned_value($returned) { 
-		if(!$this->return_as_is) {
+		if(!$this->_return_as_is) {
 			switch(strtolower($this->_type)) {
 				case 'xml':
 				case 'atom':
